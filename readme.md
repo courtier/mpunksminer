@@ -26,8 +26,8 @@ All options:
 
 ## Building
 
+- Click the code button and download the project zip
 - Download Zig
-- Clone the project
 - Run `zig build -Drelease-fast` in the project folder
 - Executable will be under zig-out/bin/
 
@@ -36,4 +36,5 @@ All options:
 - Add GPU support
 - Record processed nonces in DB
 - Add option to set the starting nonce
+- Use 64 bit integers in some places, might give some performance boost
 - 2^88 nonces possible
