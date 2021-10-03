@@ -1,6 +1,4 @@
-/* This implementation is based on:
- * https://github.com/johguse/profanity/blob/master/keccak.cl which is in turn:
- * This Keccak implementation is an amalgamation of:
+/* This Keccak implementation is an amalgamation of:
  * Tiny SHA3 implementation by Markku-Juhani O. Saarinen:
  *   https://github.com/mjosaarinen/tiny_sha3
  * Keccak implementation found in xptMiner-gpu @ Github:
@@ -156,6 +154,8 @@ __constant ulong keccakf_rndc[24] = {
     0x000000000000800a, 0x800000008000000a, 0x8000000080008081,
     0x8000000000008080, 0x0000000080000001, 0x8000000080008008};
 
+void sha3_keccakf(ethhash *const h);
+
 // Barely a bottleneck. No need to tinker more.
 void sha3_keccakf(ethhash *const h) {
   ulong *const st = &h->q;
@@ -175,4 +175,9 @@ void sha3_keccakf(ethhash *const h) {
         st[18], st[23], st[4], st[9], st[14], st[19], st[24]);
     IOTA(st[0], keccakf_rndc[i]);
   }
+}
+
+kernel void test(global char *in, const uint len, global ethhash *out) {
+  *out = {{0}};
+  sha3_keccakf(out);
 }

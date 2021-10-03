@@ -19,4 +19,6 @@ constant ulong SIXTEEN_POWERS[] = {1,
 //ulong is 64 bit
 //randomize bytes, not nonce ??
 
-kernel void miner_init(char *bytes_prefix, ulong range_start) {}
+kernel void miner_init(global char *bytes_prefix, const ulong range_start) {
+
+}

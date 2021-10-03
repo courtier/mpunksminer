@@ -5,6 +5,12 @@ const c = @cImport({
     @cInclude("CL/cl.h");
 });
 
+extern const ETHHash = union {
+    b: [200]c.cl_uchar,
+    q: [25]c.cl_ulong,
+    d: [50]c.cl_uint,
+};
+
 const log = std.log;
 const os = std.os;
 const random = std.crypto.random;
@@ -78,7 +84,8 @@ pub fn gpu(config: Config) !void {
         os.exit(1);
     }
 
-    kernel = c.clCreateKernel(program, "square", &err);
+    kernel = c.clCreateKernel(program, "test", &err);
+    //kernel = c.clCreateKernel(program, "square", &err);
     if (kernel == null or err != c.CL_SUCCESS) {
         log.err("failed to create the compute kernel. {d}", .{err});
         os.exit(1);
