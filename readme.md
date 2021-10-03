@@ -27,4 +27,6 @@ All options:
 
 ## Building
 - Download Zig
-- Run `zig build -Drelease-fast`
+- Clone the project
+- Run `zig build -Drelease-fast` in the project folder
+- Executable will be under zig-out/bin/
