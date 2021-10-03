@@ -1,5 +1,5 @@
 # mpunksminer
-
+## Warning: there are no downloads available, you will have to compile this yourself.
 - cpu support only right now, gpu coming soon
 - ignore the "error: " prefix on console, those are not actually errors :p
 - 5 MH/s on a "2,3 GHz Dual-Core Intel Core i5" cpu
