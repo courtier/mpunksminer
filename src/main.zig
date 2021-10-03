@@ -22,11 +22,10 @@ var config: Config = Config{};
 var gpa_allocator = std.heap.GeneralPurposeAllocator(.{}){};
 const gpa = &gpa_allocator.allocator;
 
-fn encodePackedBytes(nn: u88) [32]u8 {
+fn calculateBytesPrefix() [32]u8 {
     var buff: [32]u8 = undefined;
     var last = config.last_mined;
     var addy = config.address;
-    var nonce = nn;
     var i: usize = 11;
     while (i > 0) {
         buff[i] = @truncate(u8, last);
@@ -41,7 +40,13 @@ fn encodePackedBytes(nn: u88) [32]u8 {
         i -= 1;
     }
     buff[i] = @truncate(u8, addy);
-    i = 31;
+    return buff;
+}
+
+fn encodeNonceOnly(nn: u88) [32]u8 {
+    var buff: [32]u8 = config.bytes_prefix;
+    var nonce = nn;
+    var i: usize = 31;
     while (i > 21) {
         buff[i] = @truncate(u8, nonce);
         nonce >>= 8;
@@ -80,7 +85,7 @@ fn pow(nt: u88, pt: u88) u88 {
 }
 
 fn isNonceValid(nonce: u88) bool {
-    var pack = encodePackedBytes(nonce);
+    var pack = encodeNonceOnly(nonce);
     var h: [Keccak_256.digest_length]u8 = undefined;
     Keccak_256.hash(pack[0..], &h, .{});
     var n = bytesToInt(h[21..].*);
@@ -161,7 +166,7 @@ pub fn main() !void {
         var thread_count: usize = 0;
         if (args.option("--threads")) |n|
             thread_count = try fmt.parseInt(usize, n, 10);
-
+        config.bytes_prefix = calculateBytesPrefix();
         while (true) {
             try cpuThreads(thread_count);
         }
