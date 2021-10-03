@@ -17,7 +17,7 @@ All options:
 	-h, --help            	Display help.
 	-g, --gpu             	Use gpu, default is cpu.
 	-t, --threads <NUM>   	Amount of threads.
-	-w, --wallet <NUM>    	ETH wallet address.
+	-w, --wallet <NUM>    	ETH wallet address without the "0x" prefix
 	-l, --lastmined <NUM> 	Last mined punk.
 	-d, --difficulty <NUM>	Difficulty target.
 	-i, --increment <NUM> 	# of hashes per cpu thread.
