@@ -68,13 +68,22 @@ fn encodeNonceOnly(nn: u88) [32]u8 {
 
 fn bytesToInt(bytes: [11]u8) u88 {
     var res: u88 = 0;
-    var power: usize = 21;
-    for (bytes) |c| {
-        res += (c >> 4) * SIXTEEN_POWERS[power];
-        power -= 1;
-        res += (c & 15) * SIXTEEN_POWERS[power];
-        if (power > 0)
-            power -= 1;
+    var power: usize = 0;
+    // var power: usize = 21;
+    // for (bytes) |c| {
+    //     res += (c >> 4) * SIXTEEN_POWERS[power];
+    //     power -= 1;
+    //     res += (c & 15) * SIXTEEN_POWERS[power];
+    //     if (power > 0)
+    //         power -= 1;
+    // }
+    var i: usize = 0;
+    while (power < 22) {
+        res += (bytes[i] >> 4) * SIXTEEN_POWERS[power];
+        power += 1;
+        res += (bytes[i] & 15) * SIXTEEN_POWERS[power];
+        power += 1;
+        i += 1;
     }
     return res;
 }
