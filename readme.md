@@ -1,7 +1,7 @@
 # mpunksminer
 
 - cpu support only right now, gpu coming soon
-- ignore the "error: " prefix on console :p
+- ignore the "error: " prefix on console, those are not actually errors :p
 - 5Mh/s on a "2,3 GHz Dual-Core Intel Core i5" cpu
 
 ## Running
@@ -18,7 +18,7 @@ All options:
 	-h, --help            	Display help.
 	-g, --gpu             	Use gpu, default is cpu.
 	-t, --threads <NUM>   	Amount of threads.
-	-w, --wallet <NUM>    	ETH wallet address without the "0x" prefix
+	-w, --wallet <STR>    	ETH wallet address without the "0x" prefix
 	-l, --lastmined <NUM> 	Last mined punk.
 	-d, --difficulty <NUM>	Difficulty target.
 	-i, --increment <NUM> 	# of hashes per cpu thread.

@@ -140,7 +140,7 @@ pub fn main() !void {
         clap.parseParam("-h, --help                 Display help.") catch unreachable,
         clap.parseParam("-g, --gpu                  Use gpu, default is cpu.") catch unreachable,
         clap.parseParam("-t, --threads <NUM>        Amount of threads.") catch unreachable,
-        clap.parseParam("-w, --wallet <NUM>         ETH wallet address without the \"0x\" prefix.") catch unreachable,
+        clap.parseParam("-w, --wallet <STR>         ETH wallet address without the \"0x\" prefix.") catch unreachable,
         clap.parseParam("-l, --lastmined <NUM>      Last mined punk.") catch unreachable,
         clap.parseParam("-d, --difficulty <NUM>     Difficulty target.") catch unreachable,
         clap.parseParam("-i, --increment <NUM>      # of hashes per cpu thread.") catch unreachable,
