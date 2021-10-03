@@ -108,7 +108,7 @@ fn miner(range_start: u88, range_end: u88) !void {
     var n = range_start;
     while (n < range_end) {
         if (isNonceValid(n))
-            log.err("found number: {d}", .{n});
+            log.err("found nonce: {d}. CHECK IF THIS PRODUCES A OG PUNK BEFORE MINTING!", .{n});
         n += 1;
     }
 }
