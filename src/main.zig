@@ -22,6 +22,16 @@ var config: Config = Config{};
 var gpa_allocator = std.heap.GeneralPurposeAllocator(.{}){};
 const gpa = &gpa_allocator.allocator;
 
+const SIXTEEN_POWERS: [22]u88 = blk: {
+    var buf: [22]u88 = undefined;
+    var i: usize = 0;
+    while (i < 22) {
+        buf[i] = pow(16, i);
+        i += 1;
+    }
+    break :blk buf;
+};
+
 fn calculateBytesPrefix() [32]u8 {
     var buff: [32]u8 = undefined;
     var last = config.last_mined;
@@ -58,11 +68,11 @@ fn encodeNonceOnly(nn: u88) [32]u8 {
 
 fn bytesToInt(bytes: [11]u8) u88 {
     var res: u88 = 0;
-    var power: u88 = 21;
+    var power: usize = 21;
     for (bytes) |c| {
-        res += (c >> 4) * pow(16, power);
+        res += (c >> 4) * SIXTEEN_POWERS[power];
         power -= 1;
-        res += (c & 15) * pow(16, power);
+        res += (c & 15) * SIXTEEN_POWERS[power];
         if (power > 0)
             power -= 1;
     }
