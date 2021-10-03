@@ -32,4 +32,14 @@ pub fn build(b: *std.build.Builder) void {
 
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
+
+    const gpu_cmd = exe.run();
+    gpu_cmd.addArg("--gpu");
+    gpu_cmd.step.dependOn(b.getInstallStep());
+    if (b.args) |args| {
+        gpu_cmd.addArgs(args);
+    }
+
+    const gpu_step = b.step("gpu", "Run the app on GPU mode");
+    gpu_step.dependOn(&gpu_cmd.step);
 }
