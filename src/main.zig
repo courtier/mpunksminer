@@ -16,7 +16,6 @@ const Thread = std.Thread;
 const Atomic = atomic.Atomic;
 const ArrayList = std.ArrayList;
 const Keccak_256 = crypto.hash.sha3.Keccak_256;
-const stdout = std.io.getStdOut().writer();
 
 var config: Config = Config{};
 
@@ -139,6 +138,8 @@ pub fn main() !void {
 
     var args = try clap.parse(clap.Help, &params, .{});
     defer args.deinit();
+
+    const stdout = std.io.getStdOut().writer();
 
     if (args.flag("--help")) {
         try clap.help(stdout, params[0..]);

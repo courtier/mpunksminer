@@ -2,7 +2,7 @@ const std = @import("std");
 const Config = @import("config.zig");
 const c = @cImport({
     @cDefine("CL_TARGET_OPENCL_VERSION", "120");
-    @cInclude("OpenCL/opencl.h");
+    @cInclude("CL/cl.h");
 });
 
 const log = std.log;

@@ -22,3 +22,8 @@ All options:
 	-d, --difficulty <NUM>	Difficulty target.
 	-i, --increment <NUM> 	# of hashes per cpu thread.
 ```
+
+
+## Building
+- Download Zig
+- Run `zig build -Drelease-fast`

@@ -10,6 +10,7 @@ pub fn build(b: *std.build.Builder) void {
     exe.setBuildMode(mode);
 
     exe.linkLibC();
+    exe.addIncludeDir("./src/opencl-headers");
     if (target.os_tag == null) {
         exe.linkFramework("OpenCL");
     } else {
