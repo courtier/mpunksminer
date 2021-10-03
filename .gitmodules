@@ -1,7 +1,3 @@
-[submodule "src/clap"]
-	path = src/clap
-	url = https://github.com/Hejsil/zig-clap.git
-	branch = zig-master
 [submodule "src/opencl-headers"]
 	path = src/opencl-headers
 	url = https://github.com/KhronosGroup/OpenCL-Headers.git
