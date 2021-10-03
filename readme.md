@@ -35,4 +35,5 @@ All options:
 
 - Add GPU support
 - Record processed nonces in DB
+- Add option to set the starting nonce
 - 2^88 nonces possible
