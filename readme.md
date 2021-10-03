@@ -24,9 +24,15 @@ All options:
 	-i, --increment <NUM> 	# of hashes per cpu thread.
 ```
 
-
 ## Building
+
 - Download Zig
 - Clone the project
 - Run `zig build -Drelease-fast` in the project folder
 - Executable will be under zig-out/bin/
+
+## TODO
+
+- Add GPU support
+- Record processed nonces in DB
+- 2^88 nonces possible
