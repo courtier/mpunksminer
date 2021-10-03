@@ -105,12 +105,6 @@ fn miner(range_start: u88, range_end: u88) !void {
 fn cpuThreads(tc: usize) !void {
     var i: usize = 0;
     var count: usize = tc;
-    var cpu_count = try Thread.getCpuCount();
-    if (count == 0) {
-        count = try Thread.getCpuCount();
-    } else if (count != cpu_count) {
-        log.err("threads ({d}) do not match cpu cores ({d}), performance might be suboptimal", .{ count, cpu_count });
-    }
     var threads: []Thread = try gpa.alloc(Thread, count);
     var start: u88 = random.int(u88);
     var before_time = time.nanoTimestamp();
@@ -167,6 +161,12 @@ pub fn main() !void {
         if (args.option("--threads")) |n|
             thread_count = try fmt.parseInt(usize, n, 10);
         config.bytes_prefix = calculateBytesPrefix();
+        var cpu_count = try Thread.getCpuCount();
+        if (thread_count == 0) {
+            thread_count = cpu_count;
+        } else if (thread_count != cpu_count) {
+            log.err("threads ({d}) do not match cpu cores ({d}), performance might be suboptimal", .{ thread_count, cpu_count });
+        }
         while (true) {
             try cpuThreads(thread_count);
         }

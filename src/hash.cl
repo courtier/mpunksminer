@@ -337,6 +337,8 @@ kernel ulong dec64le_aligned(const void *src) {
     }                                                                          \
   }
 
+void keccak_core_80(keccak_context *kc, const void *data);
+
 kernel void keccak_init(keccak_context *kc) {
   int i;
 
@@ -356,7 +358,7 @@ kernel void keccak_init(keccak_context *kc) {
   kc->lim = 200 - (512 >> 2);
 }
 
-kernel void keccak_core_80(keccak_context *kc, const void *data) {
+void keccak_core_80(keccak_context *kc, const void *data) {
   unsigned char *buf;
 
   buf = kc->buf;
