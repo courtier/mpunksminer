@@ -104,8 +104,8 @@ fn isNonceValid(nonce: u88) bool {
 }
 
 fn miner(range_start: u88, range_end: u88) !void {
+    log.err("miner thread id: {d} - amount: {d} - start: {d}", .{ Thread.getCurrentId(), range_end - range_start, range_start });
     var n = range_start;
-    log.err("miner thread id: {d} - amount: {d}", .{ Thread.getCurrentId(), range_end - range_start });
     while (n < range_end) {
         if (isNonceValid(n))
             log.err("found number: {d}", .{n});
