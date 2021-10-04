@@ -171,7 +171,7 @@ pub fn main() !void {
         config.range_increment = try fmt.parseInt(u88, i, 10);
 
     if (args.flag("--gpu")) {
-        //try gpu.gpu(config);
+        try gpu.gpu(config, 0);
     } else {
         var thread_count: usize = 0;
         if (args.option("--threads")) |n|
