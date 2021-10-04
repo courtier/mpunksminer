@@ -5,27 +5,54 @@ const c = @cImport({
     @cInclude("CL/cl.h");
 });
 
-extern const ETHHash: union {
-    b: [200]c.cl_uchar,
-    q: [25]c.cl_ulong,
-    d: [50]c.cl_uint,
-};
-
 const log = std.log;
 const os = std.os;
-const random = std.crypto.random;
+const crypto = std.crypto;
+const random = crypto.random;
+const Keccak_256 = crypto.hash.sha3.Keccak_256;
 
-const DATA_SIZE = 1024;
+export fn reportSuccess(nonce: u64) void {
+    log.err("found nonce: {d}. CHECK IF THIS PRODUCES A OG PUNK BEFORE MINTING!", .{nonce});
+}
 
-const KERNEL_SOURCE = @embedFile("test.cl");
+//we will be using u64 instead of u88 for the gpu so pad it with extra zeroes
+//32 bytes, 12 for last mined punk, 9 for addy and 11 for nonce
+//64 bit nonce would be 8 bytes so we append 3 zeroes
+fn prepareGPUBytesPrefix(config: Config) [32]u8 {
+    var buff: [32]u8 = undefined;
+    var last = config.last_mined;
+    var addy = config.address;
+    var i: usize = 11;
+    while (i > 0) {
+        buff[i] = @truncate(u8, last);
+        last >>= 8;
+        i -= 1;
+    }
+    buff[i] = @truncate(u8, last);
+    i = 20;
+    while (i > 12) {
+        buff[i] = @truncate(u8, addy);
+        addy >>= 8;
+        i -= 1;
+    }
+    buff[i] = @truncate(u8, addy);
+    buff[21] = '0';
+    buff[22] = '0';
+    buff[23] = '0';
+    return buff;
+}
+
+const DATA_SIZE = 10000000;
+
+const KERNEL_SOURCE = @embedFile("keccak.cl");
 var KERNEL_SOURCE_C: [*c]const u8 = KERNEL_SOURCE;
 
 pub fn gpu(config: Config) !void {
     _ = config;
     var err: c_int = 0;
 
-    var data: [DATA_SIZE]f32 = undefined;
-    var results: [DATA_SIZE]f32 = undefined;
+    var data: [DATA_SIZE][32:0]u8 = undefined;
+    var results: [DATA_SIZE]u88 = undefined;
     var correct: u32 = 0;
 
     var global: usize = 0;
@@ -42,9 +69,13 @@ pub fn gpu(config: Config) !void {
     var output: c.cl_mem = undefined;
 
     var i: usize = 0;
+    var j: usize = 0;
     const count: c_uint = DATA_SIZE;
     while (i < count) {
-        data[i] = random.float(f32);
+        while (j < 32) {
+            data[i][j] = random.intRangeAtMost(u8, 0, 255);
+            j += 1;
+        }
         i += 1;
     }
 
@@ -91,23 +122,20 @@ pub fn gpu(config: Config) !void {
         os.exit(1);
     }
 
-    input = c.clCreateBuffer(context, c.CL_MEM_READ_ONLY, @sizeOf(f32) * count, null, null).?;
-    output = c.clCreateBuffer(context, c.CL_MEM_WRITE_ONLY, @sizeOf(f32) * count, null, null).?;
+    output = c.clCreateBuffer(context, c.CL_MEM_WRITE_ONLY, @sizeOf(@TypeOf(u88)) * count, null, null).?;
     if (input == null or output == null) {
         log.err("failed to allocate device memory. {d}", .{err});
         os.exit(1);
     }
 
-    err = c.clEnqueueWriteBuffer(commands, input, c.CL_TRUE, 0, @sizeOf(f32) * count, &data, 0, null, null);
+    err = c.clEnqueueWriteBuffer(commands, output, c.CL_TRUE, 0, @sizeOf(u8) * 32 * count, &data, 0, null, null);
     if (err != c.CL_SUCCESS) {
         log.err("failed to write source array. {d}", .{err});
         os.exit(1);
     }
 
     err = 0;
-    err = c.clSetKernelArg(kernel, 0, @sizeOf(c.cl_mem), &input);
     err |= c.clSetKernelArg(kernel, 1, @sizeOf(c.cl_mem), &output);
-    err |= c.clSetKernelArg(kernel, 2, @sizeOf(c_uint), &count);
     if (err != c.CL_SUCCESS) {
         log.err("failed to set kernel arguments. {d}", .{err});
         os.exit(1);
@@ -128,7 +156,7 @@ pub fn gpu(config: Config) !void {
 
     _ = c.clFinish(commands);
 
-    err = c.clEnqueueReadBuffer(commands, output, c.CL_TRUE, 0, @sizeOf(f32) * count, &results, 0, null, null);
+    err = c.clEnqueueReadBuffer(commands, output, c.CL_TRUE, 0, @sizeOf(@TypeOf(u88)) * count, &results, 0, null, null);
     if (err != c.CL_SUCCESS) {
         log.err("failed to read output array. {d}", .{err});
         os.exit(1);
@@ -136,12 +164,6 @@ pub fn gpu(config: Config) !void {
 
     correct = 0;
     i = 0;
-    while (i < count) {
-        if (results[i] == data[i] * data[i])
-            correct += 1;
-        i += 1;
-    }
-
     log.info("computed {d}/{d} correct values.", .{ correct, count });
 
     _ = c.clReleaseMemObject(input);
