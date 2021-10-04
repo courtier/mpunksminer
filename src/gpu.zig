@@ -5,7 +5,7 @@ const c = @cImport({
     @cInclude("CL/cl.h");
 });
 
-extern const ETHHash = union {
+extern const ETHHash: union {
     b: [200]c.cl_uchar,
     q: [25]c.cl_ulong,
     d: [50]c.cl_uint,

@@ -18,7 +18,7 @@ All options:
 	-h, --help            	Display help.
 	-g, --gpu             	Use gpu, default is cpu.
 	-t, --threads <NUM>   	Amount of threads.
-	-w, --wallet <STR>    	ETH wallet address without the "0x" prefix
+	-w, --wallet <STR>    	ETH wallet address.
 	-l, --lastmined <NUM> 	Last mined punk.
 	-d, --difficulty <NUM>	Difficulty target.
 	-i, --increment <NUM> 	# of hashes per cpu thread.
@@ -36,5 +36,5 @@ All options:
 - Add GPU support
 - Record processed nonces in DB
 - Add option to set the starting nonce
-- Use 64 bit integers in some places, might give some performance boost
+- Use 64 bit integers in some places, might give some performance boost, difficulty target is <64 bits
 - 2^88 nonces possible

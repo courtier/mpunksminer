@@ -140,7 +140,7 @@ pub fn main() !void {
         clap.parseParam("-h, --help                 Display help.") catch unreachable,
         clap.parseParam("-g, --gpu                  Use gpu, default is cpu.") catch unreachable,
         clap.parseParam("-t, --threads <NUM>        Amount of threads.") catch unreachable,
-        clap.parseParam("-w, --wallet <STR>         ETH wallet address without the \"0x\" prefix.") catch unreachable,
+        clap.parseParam("-w, --wallet <STR>         ETH wallet address.") catch unreachable,
         clap.parseParam("-l, --lastmined <NUM>      Last mined punk.") catch unreachable,
         clap.parseParam("-d, --difficulty <NUM>     Difficulty target.") catch unreachable,
         clap.parseParam("-i, --increment <NUM>      # of hashes per cpu thread.") catch unreachable,
@@ -158,8 +158,13 @@ pub fn main() !void {
 
     if (args.option("--lastmined")) |l|
         config.last_mined = try fmt.parseInt(u96, l, 10);
-    if (args.option("--wallet")) |w|
-        config.address = @truncate(u72, try fmt.parseInt(u160, w, 16));
+    if (args.option("--wallet")) |w| {
+        if (w[0] == '0' and w[1] == 'x') {
+            config.address = @truncate(u72, try fmt.parseInt(u160, w[2..], 16));
+        } else {
+            config.address = @truncate(u72, try fmt.parseInt(u160, w, 16));
+        }
+    }
     if (args.option("--difficulty")) |d|
         config.difficulty_target = try fmt.parseInt(u88, d, 10);
     if (args.option("--increment")) |i|
