@@ -3,5 +3,5 @@
 	url = https://github.com/KhronosGroup/OpenCL-Headers.git
 [submodule "src/clap"]
 	path = src/clap
-	url = https://github.com/Hejsil/zig-clap.git
+	url = https://github.com/WLFGRLDRT/zig-clap.git
 	branch = master
