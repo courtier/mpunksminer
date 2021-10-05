@@ -6,6 +6,7 @@ const c = @cImport({
 });
 
 const log = std.log;
+const time = std.time;
 const os = std.os;
 const crypto = std.crypto;
 const random = crypto.random;
@@ -53,8 +54,6 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
     //global ulong *nonce_results, global uint *result_index
     var bytes_prefix: [32]u8 = prepareGPUBytesPrefix(config);
     var range_start: u64 = range_start_p;
-    _ = range_start;
-    _ = bytes_prefix;
     //length 64 was picked without reason
     var nonce_results: [64]u64 = undefined;
     //var result_index: u32 = 0;
@@ -160,16 +159,18 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
         var before_time = time.nanoTimestamp();
         log.err("mining cycle start time: {d}", .{before_time});
 
-        global = local * config.gpu_range_increment;
+        //global = local * config.gpu_work_size_max;
+        global = 1;
+        local = 1;
         err = c.clEnqueueNDRangeKernel(commands, kernel, 1, null, &global, &local, 0, null, null);
         if (err != c.CL_SUCCESS) {
             log.err("failed to execute the kernel. {d}", .{err});
             os.exit(1);
         }
 
-        var after_time = time.nanoTimestamp();
-
         _ = c.clFinish(commands);
+
+        var after_time = time.nanoTimestamp();
 
         err = c.clEnqueueReadBuffer(commands, nonce_results_mem, c.CL_TRUE, 0, @sizeOf(u64) * 64, &nonce_results, 0, null, null);
         if (err != c.CL_SUCCESS) {
@@ -179,6 +180,7 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
 
         log.err("finished {d} hashes", .{global});
         log.err("mining cycle end time: {d}, diff: {d}", .{ after_time, after_time - before_time });
+        break;
     }
 
     _ = c.clReleaseMemObject(nonce_results_mem);

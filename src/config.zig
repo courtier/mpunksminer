@@ -6,4 +6,5 @@ range_increment: u88 = 10000000,
 bytes_prefix: [32]u8 = undefined,
 
 gpu_difficulty_target: u64 = 5731203885580,
-gpu_range_increment: u64 = 10000000,
+//TODO add option to both automatically determine this and override it manually
+gpu_work_size_max: u64 = 10000000,
