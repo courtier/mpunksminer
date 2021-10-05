@@ -26,7 +26,7 @@ All options:
 
 ## Building
 
-- Click the code button and download the project zip
+- Clone the project then run `git submodule update --recursive --remote`
 - Download [Zig](https://ziglang.org/download/)
 - Run `zig build -Drelease-fast` in the project folder
 - Executable will be under zig-out/bin/
