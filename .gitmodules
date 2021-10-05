@@ -4,4 +4,4 @@
 [submodule "src/clap"]
 	path = src/clap
 	url = https://github.com/Hejsil/zig-clap.git
-	branch = zig-master
+	branch = master
