@@ -32,6 +32,9 @@ const SIXTEEN_POWERS: [22]u88 = blk: {
     break :blk buf;
 };
 
+//take the sha3.zig and modify that too, surely i could speed it up
+//also make it return binary perhaps
+
 fn calculateBytesPrefix() [32]u8 {
     var buff: [32]u8 = undefined;
     var last = config.last_mined;
@@ -53,6 +56,8 @@ fn calculateBytesPrefix() [32]u8 {
     return buff;
 }
 
+//maybe remove the @truncate and replace with shift
+//use u64?
 fn encodeNonceOnly(nn: u88) [32]u8 {
     var buff: [32]u8 = config.bytes_prefix;
     var nonce = nn;
@@ -66,6 +71,7 @@ fn encodeNonceOnly(nn: u88) [32]u8 {
     return buff;
 }
 
+//convert binary into decimal
 fn bytesToInt(bytes: [11]u8) u88 {
     var res: u88 = 0;
     var power: usize = 0;
