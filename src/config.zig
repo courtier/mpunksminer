@@ -7,4 +7,6 @@ bytes_prefix: [32]u8 = undefined,
 
 gpu_difficulty_target: u64 = 5731203885580,
 //TODO add option to both automatically determine this and override it manually
-gpu_work_size_max: u64 = 10000000,
+gpu_work_size_max: u64 = 10000,
+
+test_address: u72 = @truncate(u72, @intCast(u160, 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4)),

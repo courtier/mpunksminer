@@ -28,7 +28,7 @@ fn reportSuccess(nonce: u64) void {
 fn prepareGPUBytesPrefix(config: Config) [32]u8 {
     var buff: [32]u8 = undefined;
     var last = config.last_mined;
-    var addy = config.address;
+    var addy = config.test_address;
     var i: usize = 11;
     while (i > 0) {
         buff[i] = @truncate(u8, last);
@@ -187,7 +187,7 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
     var i: usize = 0;
     if (result_index > 0) {
         while (i <= result_index - 1) {
-            log.info("nonce: {d}", .{nonce_results[i]});
+            log.err("nonce: {d}", .{nonce_results[i]});
             i += 1;
         }
     }
