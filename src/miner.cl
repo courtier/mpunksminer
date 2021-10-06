@@ -133,7 +133,7 @@ kernel void miner_init(global uchar *bytes_prefix, const ulong range_start,
                        global ulong *nonce_results, global uint *result_index) {
   uint worker_id = (ulong)get_global_id(0);
   ulong nonce = range_start + worker_id;
-  printf("nonce: %d\n", nonce);
+  // printf("nonce: %d\n", nonce);
   uchar local_bytes[32];
   uint i;
   for (i = 0; i < 24; i++) {
@@ -147,33 +147,57 @@ kernel void miner_init(global uchar *bytes_prefix, const ulong range_start,
   local_bytes[26] = (nonce >> 40) & 255;
   local_bytes[25] = (nonce >> 48) & 255;
   local_bytes[24] = (nonce >> 56) & 255;
-  for (i = 0; i < 32; i++) {
+  /*for (i = 0; i < 32; i++) {
     printf("%d-", local_bytes[i]);
   }
-  printf("\n");
+  printf("\n");*/
   // hash to decimal then cast to ulong by doing (number & 0xFFFFFFFF)
   // what did i mean by this?
   // TODO
   // uchar test[4] = "test";
   uchar hash_bytes[32];
-  uchar charset[16] = "0123456789abcdef";
   hash(hash_bytes, 32, local_bytes, 32, 200 - (256 / 4), 0x01);
+  /*uchar charset[16] = "0123456789abcdef";
   for (i = 0; i < 32; i++) {
     printf("%c", charset[hash_bytes[i] >> 4]);
     printf("%c", charset[hash_bytes[i] & 15]);
   }
-  printf("\n");
+  printf("\n");*/
+  // hex is 4 bits, we have 256 bit hash
+  // we want 64 bit integer 16 hex digits
+  // we will have to truncate from 128 bit to 88
+  // if it overflows ulong that means its greather than
+  // difficulty_target so we just return false
+  hash_bytes[20] = 0;
+  hash_bytes[21] = 0;
+  hash_bytes[22] = 0;
+  hash_bytes[23] = 0;
+  hash_bytes[24] = 0;
+  hash_bytes[25] = 0;
+  hash_bytes[26] = 0;
+  hash_bytes[27] = 0;
+  hash_bytes[28] = 0;
   ulong result = 0;
   uint power = 0;
-  i = 24;
-  while (power < 16) {
+  i = 31;
+  // 0x10000000000000000000000
+  while (i > 20) {
+    // if (result + ((hash_bytes[i] >> 4) * SIXTEEN_POWERS[power]) <
+    //     difficulty_target) {
     result += (hash_bytes[i] >> 4) * SIXTEEN_POWERS[power++];
+    // } else
+    //   return;
+    // if (result + ((hash_bytes[i] & 4) * SIXTEEN_POWERS[power]) <
+    //     difficulty_target) {
     result += (hash_bytes[i] & 15) * SIXTEEN_POWERS[power++];
-    i++;
+    // } else
+    //   return;
+    i--;
   }
-  printf("%d\n", result);
-  if (result < difficulty_target) {
+  printf("pedo: %d\n", result);
+  if (result > 0 && result < difficulty_target) {
     atomic_inc(result_index);
     nonce_results[*result_index] = nonce;
+    printf("appended: %d\n", *result_index);
   }
 }

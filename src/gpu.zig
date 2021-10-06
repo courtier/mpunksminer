@@ -122,7 +122,6 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
         log.err("failed to create the compute kernel. {d}", .{err});
         os.exit(1);
     }
-    log.info("fuck you", .{});
 
     nonce_results_mem = c.clCreateBuffer(context, c.CL_MEM_WRITE_ONLY, @sizeOf(u64) * 64, null, null);
     result_index_mem = c.clCreateBuffer(context, c.CL_MEM_WRITE_ONLY, @sizeOf(u32), null, null);
@@ -174,8 +173,8 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
     _ = c.clFinish(commands);
 
     var after_time = time.nanoTimestamp();
-    _ = range_start;
-    err = c.clEnqueueReadBuffer(commands, nonce_results_mem, c.CL_TRUE, 0, @sizeOf(u64) * 64, &nonce_results, 0, null, null);
+
+    err = c.clEnqueueReadBuffer(commands, nonce_results_mem, c.CL_TRUE, 0, @sizeOf(c.cl_ulong) * 64, &nonce_results, 0, null, null);
     if (err != c.CL_SUCCESS) {
         log.err("failed to read output array. {d}", .{err});
         os.exit(1);
@@ -187,10 +186,12 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
     }
 
     log.err("found {d} nonces", .{result_index});
-    var i: usize = 0;
     if (result_index > 0) {
-        while (i <= result_index - 1) {
-            log.err("nonce: {d}", .{nonce_results[i]});
+        var i: usize = 0;
+        while (i < 64) {
+            if (nonce_results[i] > 0) {
+                log.err("nonce: {d}", .{nonce_results[i]});
+            }
             i += 1;
         }
     }
