@@ -28,7 +28,7 @@ fn reportSuccess(nonce: u64) void {
 fn prepareGPUBytesPrefix(config: Config) [32]u8 {
     var buff: [32]u8 = undefined;
     var last = config.last_mined;
-    var addy = config.test_address;
+    var addy = config.address;
     var i: usize = 11;
     while (i > 0) {
         buff[i] = @truncate(u8, last);
@@ -43,9 +43,9 @@ fn prepareGPUBytesPrefix(config: Config) [32]u8 {
         i -= 1;
     }
     buff[i] = @truncate(u8, addy);
-    buff[21] = '0';
-    buff[22] = '0';
-    buff[23] = '0';
+    buff[21] = 0;
+    buff[22] = 0;
+    buff[23] = 0;
     return buff;
 }
 
@@ -58,6 +58,7 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
     var bytes_prefix: [32]u8 = prepareGPUBytesPrefix(config);
     var bytes_prefix_c: [*c]const u8 = bytes_prefix[0..];
     var range_start: u64 = range_start_p;
+    var difficulty_target: u64 = config.gpu_difficulty_target;
     //length 64 was picked without reason
     var nonce_results: [64]u64 = undefined;
     var result_index: u32 = 0;
@@ -140,8 +141,9 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
     err = 0;
     err |= c.clSetKernelArg(kernel, 0, @sizeOf(c.cl_mem), &bytes_prefix_mem);
     err |= c.clSetKernelArg(kernel, 1, @sizeOf(c.cl_ulong), &range_start);
-    err |= c.clSetKernelArg(kernel, 2, @sizeOf(c.cl_mem), &nonce_results_mem);
-    err |= c.clSetKernelArg(kernel, 3, @sizeOf(c.cl_mem), &result_index_mem);
+    err |= c.clSetKernelArg(kernel, 2, @sizeOf(c.cl_ulong), &difficulty_target);
+    err |= c.clSetKernelArg(kernel, 3, @sizeOf(c.cl_mem), &nonce_results_mem);
+    err |= c.clSetKernelArg(kernel, 4, @sizeOf(c.cl_mem), &result_index_mem);
     if (err != c.CL_SUCCESS) {
         log.err("failed to set kernel arguments. {d}", .{err});
         os.exit(1);
@@ -153,15 +155,16 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
         os.exit(1);
     }
 
-    log.info("max workers: {d}", .{local});
+    //global = local * config.gpu_work_size_max;
+    global = 1;
+    local = 1;
+
+    log.err("max workers: {d}, total work: {d}", .{ local, (global * local) });
 
     //while (true) {
     var before_time = time.nanoTimestamp();
     log.err("mining cycle start time: {d}", .{before_time});
 
-    //global = local * config.gpu_work_size_max;
-    global = 1;
-    local = 1;
     err = c.clEnqueueNDRangeKernel(commands, kernel, 1, null, &global, &local, 0, null, null);
     if (err != c.CL_SUCCESS) {
         log.err("failed to execute the kernel. {d}", .{err});

@@ -1,3 +1,20 @@
+constant ulong SIXTEEN_POWERS[] = {1,
+                                   16,
+                                   256,
+                                   4096,
+                                   65536,
+                                   1048576,
+                                   16777216,
+                                   268435456,
+                                   4294967296,
+                                   68719476736,
+                                   1099511627776,
+                                   17592186044416,
+                                   281474976710656,
+                                   4503599627370496,
+                                   72057594037927936,
+                                   1152921504606846976};
+
 // we are assuming bytes len = 32 and out len = 32
 // https://github.com/ethereum/solidity/blob/develop/libsolutil/Keccak256.cpp
 constant uchar RHO[24] = {1,  3,  6,  10, 15, 21, 28, 36, 45, 55, 2,  14,
@@ -112,11 +129,11 @@ inline void hash(uchar *out, size_t outlen, uchar const *in, size_t inlen,
 }
 
 kernel void miner_init(global uchar *bytes_prefix, const ulong range_start,
+                       const ulong difficulty_target,
                        global ulong *nonce_results, global uint *result_index) {
   uint worker_id = (ulong)get_global_id(0);
   ulong nonce = range_start + worker_id;
-  // ulong nonce = range_start;
-  //printf("nonce: %d\n", nonce);
+  printf("nonce: %d\n", nonce);
   uchar local_bytes[32];
   uint i;
   for (i = 0; i < 24; i++) {
@@ -130,23 +147,33 @@ kernel void miner_init(global uchar *bytes_prefix, const ulong range_start,
   local_bytes[26] = (nonce >> 40) & 255;
   local_bytes[25] = (nonce >> 48) & 255;
   local_bytes[24] = (nonce >> 56) & 255;
+  for (i = 0; i < 32; i++) {
+    printf("%d-", local_bytes[i]);
+  }
+  printf("\n");
   // hash to decimal then cast to ulong by doing (number & 0xFFFFFFFF)
   // what did i mean by this?
   // TODO
-  uchar test[4] = "test";
+  // uchar test[4] = "test";
   uchar hash_bytes[32];
   uchar charset[16] = "0123456789abcdef";
-  hash(hash_bytes, 32, test, 4, 200 - (256 / 4), 0x01);
+  hash(hash_bytes, 32, local_bytes, 32, 200 - (256 / 4), 0x01);
   for (i = 0; i < 32; i++) {
     printf("%c", charset[hash_bytes[i] >> 4]);
     printf("%c", charset[hash_bytes[i] & 15]);
   }
   printf("\n");
-  nonce_results[0] = 5;
-  bool valid_nonce = false;
-  if (valid_nonce) {
+  ulong result = 0;
+  uint power = 0;
+  i = 24;
+  while (power < 16) {
+    result += (hash_bytes[i] >> 4) * SIXTEEN_POWERS[power++];
+    result += (hash_bytes[i] & 15) * SIXTEEN_POWERS[power++];
+    i++;
+  }
+  printf("%d\n", result);
+  if (result < difficulty_target) {
     atomic_inc(result_index);
     nonce_results[*result_index] = nonce;
   }
-  //printf("hello from kernel\n");
 }
