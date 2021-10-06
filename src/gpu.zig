@@ -141,8 +141,6 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
     err |= c.clSetKernelArg(kernel, 0, @sizeOf(c.cl_mem), &bytes_prefix_mem);
     //range start is set each loop
     err |= c.clSetKernelArg(kernel, 2, @sizeOf(c.cl_ulong), &difficulty_target);
-    err |= c.clSetKernelArg(kernel, 3, @sizeOf(c.cl_mem), &nonce_results_mem);
-    err |= c.clSetKernelArg(kernel, 4, @sizeOf(c.cl_mem), &result_index_mem);
     if (err != c.CL_SUCCESS) {
         log.err("failed to set kernel arguments. {d}", .{err});
         os.exit(1);
@@ -171,10 +169,20 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
     const stdout = std.io.getStdOut().writer();
     var mhs: i128 = 0;
     while (true) {
+        nonce_results_mem = c.clCreateBuffer(context, c.CL_MEM_WRITE_ONLY, @sizeOf(c.cl_ulong) * 64, null, null);
+        result_index_mem = c.clCreateBuffer(context, c.CL_MEM_WRITE_ONLY, @sizeOf(u32), null, null);
+        if (nonce_results_mem == null or result_index_mem == null) {
+            log.err("failed to allocate device memory. {d}", .{err});
+            os.exit(1);
+        }
+
         range_start = random.int(u64);
-        err = c.clSetKernelArg(kernel, 1, @sizeOf(c.cl_ulong), &range_start);
+        err = 0;
+        err |= c.clSetKernelArg(kernel, 1, @sizeOf(c.cl_ulong), &range_start);
+        err |= c.clSetKernelArg(kernel, 3, @sizeOf(c.cl_mem), &nonce_results_mem);
+        err |= c.clSetKernelArg(kernel, 4, @sizeOf(c.cl_mem), &result_index_mem);
         if (err != c.CL_SUCCESS) {
-            log.err("failed to set range start. {d}", .{err});
+            log.err("failed to set kernel arguments. {d}", .{err});
             os.exit(1);
         }
 
@@ -215,10 +223,13 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
             }
         }
 
+        _ = c.clReleaseMemObject(nonce_results_mem);
+        _ = c.clReleaseMemObject(result_index_mem);
+
         log.info("checked {d} hashes", .{global});
         log.info("mining cycle end time: {d}, diff: {d}", .{ after_time, after_time - before_time });
         mhs = @divTrunc(global * 1000000000, (after_time - before_time));
-        try stdout.print("mhs: {d}\r", .{mhs});
+        try stdout.print("mhs: {d} mh/s\r", .{mhs});
     }
 
     _ = c.clReleaseMemObject(nonce_results_mem);

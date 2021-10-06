@@ -135,6 +135,7 @@ kernel void miner_init(global uchar *bytes_prefix, const ulong range_start,
   if (range_start >= ULONG_MAX - worker_id)
     return;
   ulong nonce = range_start + worker_id;
+  // ulong nonce = 4416973503411977525;
   uchar local_bytes[32];
   uint i;
   for (i = 0; i < 24; i++) {
@@ -188,7 +189,7 @@ kernel void miner_init(global uchar *bytes_prefix, const ulong range_start,
     //     difficulty_target) {
     // if (result + ((hash_bytes[i] >> 4) * SIXTEEN_POWERS[power++]) >
     // (0x10000000000000000-1)) {
-    if (power > 16 && hash_bytes[i] != '0')
+    if (power > 15 && ((hash_bytes[i] >> 4) != 0 || (hash_bytes[i] & 15) != 0))
       return;
     tmp = (hash_bytes[i] >> 4) * SIXTEEN_POWERS[power--];
     if (result > ULONG_MAX - tmp) {
@@ -203,13 +204,14 @@ kernel void miner_init(global uchar *bytes_prefix, const ulong range_start,
     if (result > ULONG_MAX - tmp) {
       return;
     }
+    result += tmp;
     if (power > 0)
       power--;
-    result += tmp;
     // } else
     //   return;
     i++;
   }
+  //  printf("result: %d\n", result);
   // printf("%d\n", result);
   // if result overflows it goes into negatives
   // is this platform dependent? should i be relying on this?
