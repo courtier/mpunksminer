@@ -11,6 +11,7 @@ const debug = std.debug;
 const io = std.io;
 const log = std.log;
 const atomic = std.atomic;
+const math = std.math;
 const random = std.crypto.random;
 const Thread = std.Thread;
 const Atomic = atomic.Atomic;
@@ -71,16 +72,15 @@ fn encodeNonceOnly(nn: u88) [32]u8 {
     return buff;
 }
 
-//convert binary into decimal
 fn bytesToInt(bytes: [11]u8) u88 {
     var res: u88 = 0;
-    var power: usize = 0;
+    var power: usize = 22;
     var i: usize = 0;
-    while (power < 22) {
+    while (i < 11) {
+        power -= 1;
         res += (bytes[i] >> 4) * SIXTEEN_POWERS[power];
-        power += 1;
+        power -= 1;
         res += (bytes[i] & 15) * SIXTEEN_POWERS[power];
-        power += 1;
         i += 1;
     }
     return res;
@@ -150,6 +150,7 @@ pub fn main() !void {
         clap.parseParam("-l, --lastmined <NUM>      Last mined punk.") catch unreachable,
         clap.parseParam("-d, --difficulty <NUM>     Difficulty target.") catch unreachable,
         clap.parseParam("-i, --increment <NUM>      # of hashes per cpu thread.") catch unreachable,
+        clap.parseParam("--test                     Run in test mode.") catch unreachable,
     };
 
     var args = try clap.parse(clap.Help, &params, .{});
@@ -178,6 +179,11 @@ pub fn main() !void {
 
     if (args.flag("--gpu")) {
         try gpu.gpu(config, 0);
+    } else if (args.flag("--test")) {
+        //random
+        config.address = @truncate(u72, @intCast(u160, 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4));
+        config.bytes_prefix = calculateBytesPrefix();
+        _ = isNonceValid(0);
     } else {
         var thread_count: usize = 0;
         if (args.option("--threads")) |n|
