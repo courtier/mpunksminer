@@ -154,7 +154,17 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
         os.exit(1);
     }
 
-    global = local * config.gpu_work_size_max;
+    var multiple: usize = 0;
+    err = c.clGetKernelWorkGroupInfo(kernel, device_id, c.CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, @sizeOf(usize), &multiple, null);
+    if (err != c.CL_SUCCESS) {
+        log.err("failed to retrieve kernel work group size multiple. {d}", .{err});
+        os.exit(1);
+    }
+
+    log.info("multiple: {d}", .{multiple});
+
+    //global = local * config.gpu_work_size_max;
+    global = local * local * multiple;
     // global = 1;
     // local = 1;
     log.err("max workers: {d}, total work: {d}", .{ local, global });
@@ -181,19 +191,21 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
 
         var after_time = time.nanoTimestamp();
 
-        err = c.clEnqueueReadBuffer(commands, nonce_results_mem, c.CL_TRUE, 0, @sizeOf(c.cl_ulong) * 64, &nonce_results, 0, null, null);
-        if (err != c.CL_SUCCESS) {
-            log.err("failed to read output array. {d}", .{err});
-            os.exit(1);
-        }
         err = c.clEnqueueReadBuffer(commands, result_index_mem, c.CL_TRUE, 0, @sizeOf(u32), &result_index, 0, null, null);
         if (err != c.CL_SUCCESS) {
             log.err("failed to read output index. {d}", .{err});
             os.exit(1);
         }
 
-        // log.err("found {d} nonces", .{result_index});
         if (result_index > 0) {
+            log.err("found {d} nonces", .{result_index});
+
+            err = c.clEnqueueReadBuffer(commands, nonce_results_mem, c.CL_TRUE, 0, @sizeOf(c.cl_ulong) * 64, &nonce_results, 0, null, null);
+            if (err != c.CL_SUCCESS) {
+                log.err("failed to read output array. {d}", .{err});
+                os.exit(1);
+            }
+
             var i: usize = 0;
             while (i < 64) {
                 if (nonce_results[i] > 0) {

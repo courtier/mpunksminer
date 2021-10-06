@@ -188,7 +188,7 @@ kernel void miner_init(global uchar *bytes_prefix, const ulong range_start,
     //     difficulty_target) {
     // if (result + ((hash_bytes[i] >> 4) * SIXTEEN_POWERS[power++]) >
     // (0x10000000000000000-1)) {
-    if (power > 16 && i != 0)
+    if (power > 16 && hash_bytes[i] != '0')
       return;
     tmp = (hash_bytes[i] >> 4) * SIXTEEN_POWERS[power--];
     if (result > ULONG_MAX - tmp) {
