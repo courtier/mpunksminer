@@ -157,9 +157,9 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
     global = local * config.gpu_work_size_max;
     // global = 1;
     // local = 1;
-    var total_work = global;
-    log.err("max workers: {d}, total work: {d}", .{ local, total_work });
-
+    log.err("max workers: {d}, total work: {d}", .{ local, global });
+    const stdout = std.io.getStdOut().writer();
+    var mhs: i128 = 0;
     while (true) {
         range_start = random.int(u64);
         err = c.clSetKernelArg(kernel, 1, @sizeOf(c.cl_ulong), &range_start);
@@ -203,8 +203,10 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
             }
         }
 
-        log.info("checked {d} hashes", .{total_work});
+        log.info("checked {d} hashes", .{global});
         log.info("mining cycle end time: {d}, diff: {d}", .{ after_time, after_time - before_time });
+        mhs = @divTrunc(global * 1000000000, (after_time - before_time));
+        try stdout.print("mhs: {d}\r", .{mhs});
     }
 
     _ = c.clReleaseMemObject(nonce_results_mem);

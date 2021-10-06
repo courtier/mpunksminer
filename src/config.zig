@@ -7,6 +7,6 @@ difficulty_target: u88 = 5731203885580,
 range_increment: u88 = 10000000,
 bytes_prefix: [32]u8 = undefined,
 
-gpu_difficulty_target: u64 = 5731203885580,
+gpu_difficulty_target: u64 = 111115731203885580,
 //TODO add option to both automatically determine this and override it manually
 gpu_work_size_max: usize = 100,

@@ -150,6 +150,7 @@ pub fn main() !void {
         clap.parseParam("-l, --lastmined <NUM>      Last mined punk.") catch unreachable,
         clap.parseParam("-d, --difficulty <NUM>     Difficulty target.") catch unreachable,
         clap.parseParam("-i, --increment <NUM>      # of hashes per cpu thread.") catch unreachable,
+        //add option to change gpu work amount
         clap.parseParam("--test                     Run in test mode.") catch unreachable,
     };
 
