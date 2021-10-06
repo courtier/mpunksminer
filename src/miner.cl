@@ -131,9 +131,8 @@ inline void hash(uchar *out, size_t outlen, uchar const *in, size_t inlen,
 kernel void miner_init(global uchar *bytes_prefix, const ulong range_start,
                        const ulong difficulty_target,
                        global ulong *nonce_results, global uint *result_index) {
-  uint worker_id = (ulong)get_global_id(0);
+  ulong worker_id = (ulong)get_global_id(0);
   ulong nonce = range_start + worker_id;
-  // printf("nonce: %d\n", nonce);
   uchar local_bytes[32];
   uint i;
   for (i = 0; i < 24; i++) {
@@ -157,47 +156,59 @@ kernel void miner_init(global uchar *bytes_prefix, const ulong range_start,
   // uchar test[4] = "test";
   uchar hash_bytes[32];
   hash(hash_bytes, 32, local_bytes, 32, 200 - (256 / 4), 0x01);
-  /*uchar charset[16] = "0123456789abcdef";
-  for (i = 0; i < 32; i++) {
-    printf("%c", charset[hash_bytes[i] >> 4]);
-    printf("%c", charset[hash_bytes[i] & 15]);
-  }
-  printf("\n");*/
+  // uchar charset[16] = "0123456789abcdef";
+  // char buf[66];
+  // uint buf_i = 0;
+  // for (i = 0; i < 32; i++) {
+  //   buf[buf_i] = charset[hash_bytes[i] >> 4];
+  //   buf_i += 1;
+  //   buf[buf_i] = charset[hash_bytes[i] & 15];
+  //   buf_i += 1;
+  // }
+  // buf[buf_i] = 0;
+  // buf[64] = '\0';
+  // for (i = 0; i < 65; i++) {
+  //   printf("%c", buf[i]);
+  // }
+  // printf("hatred\n");
   // hex is 4 bits, we have 256 bit hash
   // we want 64 bit integer 16 hex digits
   // we will have to truncate from 128 bit to 88
   // if it overflows ulong that means its greather than
   // difficulty_target so we just return false
-  hash_bytes[20] = 0;
-  hash_bytes[21] = 0;
-  hash_bytes[22] = 0;
-  hash_bytes[23] = 0;
-  hash_bytes[24] = 0;
-  hash_bytes[25] = 0;
-  hash_bytes[26] = 0;
-  hash_bytes[27] = 0;
-  hash_bytes[28] = 0;
   ulong result = 0;
   uint power = 0;
+  ulong tmp;
   i = 31;
-  // 0x10000000000000000000000
+  // 0x10000000000000000
   while (i > 20) {
     // if (result + ((hash_bytes[i] >> 4) * SIXTEEN_POWERS[power]) <
     //     difficulty_target) {
-    result += (hash_bytes[i] >> 4) * SIXTEEN_POWERS[power++];
+    // if (result + ((hash_bytes[i] >> 4) * SIXTEEN_POWERS[power++]) >
+    // (0x10000000000000000-1)) {
+    tmp = (hash_bytes[i] >> 4) * SIXTEEN_POWERS[power++];
+    if (result > ULONG_MAX - tmp) {
+      return;
+    }
+    result += tmp;
     // } else
     //   return;
     // if (result + ((hash_bytes[i] & 4) * SIXTEEN_POWERS[power]) <
     //     difficulty_target) {
-    result += (hash_bytes[i] & 15) * SIXTEEN_POWERS[power++];
+    tmp = (hash_bytes[i] & 15) * SIXTEEN_POWERS[power++];
+    if (result > ULONG_MAX - tmp) {
+      return;
+    }
+    result += tmp;
     // } else
     //   return;
     i--;
   }
-  printf("pedo: %d\n", result);
-  if (result > 0 && result < difficulty_target) {
+  // if result overflows it goes into negatives
+  // is this platform dependent? should i be relying on this?
+  // probbably not.
+  if (result < difficulty_target) {
     atomic_inc(result_index);
     nonce_results[*result_index] = nonce;
-    printf("appended: %d\n", *result_index);
   }
 }

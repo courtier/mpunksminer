@@ -123,10 +123,10 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
         os.exit(1);
     }
 
-    nonce_results_mem = c.clCreateBuffer(context, c.CL_MEM_WRITE_ONLY, @sizeOf(u64) * 64, null, null);
+    nonce_results_mem = c.clCreateBuffer(context, c.CL_MEM_WRITE_ONLY, @sizeOf(c.cl_ulong) * 64, null, null);
     result_index_mem = c.clCreateBuffer(context, c.CL_MEM_WRITE_ONLY, @sizeOf(u32), null, null);
     bytes_prefix_mem = c.clCreateBuffer(context, c.CL_MEM_READ_ONLY, @sizeOf(c.cl_uchar) * 32, null, null);
-    if (nonce_results_mem == null) {
+    if (nonce_results_mem == null or result_index_mem == null or bytes_prefix_mem == null) {
         log.err("failed to allocate device memory. {d}", .{err});
         os.exit(1);
     }
@@ -154,11 +154,9 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
         os.exit(1);
     }
 
-    //global = local * config.gpu_work_size_max;
-    global = 1;
-    local = 1;
-
-    log.err("max workers: {d}, total work: {d}", .{ local, (global * local) });
+    global = local * config.gpu_work_size_max;
+    var total_work = global;
+    log.err("max workers: {d}, total work: {d}", .{ local, total_work });
 
     //while (true) {
     var before_time = time.nanoTimestamp();
@@ -196,7 +194,7 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
         }
     }
 
-    log.err("finished {d} hashes", .{global});
+    log.err("checked {d} hashes", .{total_work});
     log.err("mining cycle end time: {d}, diff: {d}", .{ after_time, after_time - before_time });
     //break;
     //}
