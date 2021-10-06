@@ -12,7 +12,13 @@ const crypto = std.crypto;
 const random = crypto.random;
 const Keccak_256 = crypto.hash.sha3.Keccak_256;
 
-export fn reportSuccess(nonce: u64) void {
+var gpa_allocator = std.heap.GeneralPurposeAllocator(.{}){};
+const gpa = &gpa_allocator.allocator;
+
+const KERNEL_SOURCE = @embedFile("miner.cl");
+var KERNEL_SOURCE_C: [*c]const u8 = KERNEL_SOURCE;
+
+fn reportSuccess(nonce: u64) void {
     log.err("found nonce: {d}. CHECK IF THIS PRODUCES A OG PUNK BEFORE MINTING!", .{nonce});
 }
 
@@ -43,9 +49,6 @@ fn prepareGPUBytesPrefix(config: Config) [32]u8 {
     return buff;
 }
 
-const KERNEL_SOURCE = @embedFile("miner.cl");
-var KERNEL_SOURCE_C: [*c]const u8 = KERNEL_SOURCE;
-
 pub fn gpu(config: Config, range_start_p: u64) !void {
     var err: c_int = 0;
 
@@ -53,12 +56,11 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
     //constant char *bytes_prefix, constant ulong *range_start,
     //global ulong *nonce_results, global uint *result_index
     var bytes_prefix: [32]u8 = prepareGPUBytesPrefix(config);
+    var bytes_prefix_c: [*c]const u8 = bytes_prefix[0..];
     var range_start: u64 = range_start_p;
     //length 64 was picked without reason
     var nonce_results: [64]u64 = undefined;
-    //var result_index: u32 = 0;
-    //_ = result_index;
-    //_ = nonce_results;
+    var result_index: u32 = 0;
 
     var global: usize = 0;
     var local: usize = 0;
@@ -75,9 +77,6 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
     var result_index_mem: c.cl_mem = undefined;
     //read only
     var bytes_prefix_mem: c.cl_mem = undefined;
-
-    _ = local;
-    _ = global;
 
     err = c.clGetDeviceIDs(null, c.CL_DEVICE_TYPE_GPU, 1, &device_id, null);
     if (err != c.CL_SUCCESS) {
@@ -108,9 +107,9 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
     err = c.clBuildProgram(program, 0, null, null, null, null);
     if (err != c.CL_SUCCESS) {
         log.err("failed to build the program executable. {d}", .{err});
-        var buf: [2048]u8 = undefined;
+        var buf: [2048:0]u8 = undefined;
         var len: usize = 0;
-        _ = c.clGetProgramBuildInfo(program, device_id, c.CL_PROGRAM_BUILD_LOG, 1024, &buf, &len);
+        _ = c.clGetProgramBuildInfo(program, device_id, c.CL_PROGRAM_BUILD_LOG, 2048, &buf, &len);
         log.err("{s}", .{buf});
         os.exit(1);
     }
@@ -122,16 +121,17 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
         log.err("failed to create the compute kernel. {d}", .{err});
         os.exit(1);
     }
+    log.info("fuck you", .{});
 
     nonce_results_mem = c.clCreateBuffer(context, c.CL_MEM_WRITE_ONLY, @sizeOf(u64) * 64, null, null);
     result_index_mem = c.clCreateBuffer(context, c.CL_MEM_WRITE_ONLY, @sizeOf(u32), null, null);
-    bytes_prefix_mem = c.clCreateBuffer(context, c.CL_MEM_READ_ONLY, @sizeOf(c.cl_char) * 32, null, null);
-    if (nonce_results_mem == null or result_index_mem == null or bytes_prefix_mem == null) {
+    bytes_prefix_mem = c.clCreateBuffer(context, c.CL_MEM_READ_ONLY, @sizeOf(c.cl_uchar) * 32, null, null);
+    if (nonce_results_mem == null) {
         log.err("failed to allocate device memory. {d}", .{err});
         os.exit(1);
     }
 
-    err = c.clEnqueueWriteBuffer(commands, bytes_prefix_mem, c.CL_TRUE, 0, @sizeOf(c.cl_char) * 32, &bytes_prefix, 0, null, null);
+    err = c.clEnqueueWriteBuffer(commands, bytes_prefix_mem, c.CL_TRUE, 0, @sizeOf(c.cl_uchar) * 32, bytes_prefix_c, 0, null, null);
     if (err != c.CL_SUCCESS) {
         log.err("failed to write to bytes_prefix array. {d}", .{err});
         os.exit(1);
@@ -147,7 +147,7 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
         os.exit(1);
     }
 
-    err = c.clGetKernelWorkGroupInfo(kernel, device_id, c.CL_KERNEL_WORK_GROUP_SIZE, @sizeOf(@TypeOf(local)), &local, null);
+    err = c.clGetKernelWorkGroupInfo(kernel, device_id, c.CL_KERNEL_WORK_GROUP_SIZE, @sizeOf(usize), &local, null);
     if (err != c.CL_SUCCESS) {
         log.err("failed to retrieve kernel work group info. {d}", .{err});
         os.exit(1);
@@ -155,33 +155,47 @@ pub fn gpu(config: Config, range_start_p: u64) !void {
 
     log.info("max workers: {d}", .{local});
 
-    while (true) {
-        var before_time = time.nanoTimestamp();
-        log.err("mining cycle start time: {d}", .{before_time});
+    //while (true) {
+    var before_time = time.nanoTimestamp();
+    log.err("mining cycle start time: {d}", .{before_time});
 
-        //global = local * config.gpu_work_size_max;
-        global = 1;
-        local = 1;
-        err = c.clEnqueueNDRangeKernel(commands, kernel, 1, null, &global, &local, 0, null, null);
-        if (err != c.CL_SUCCESS) {
-            log.err("failed to execute the kernel. {d}", .{err});
-            os.exit(1);
-        }
-
-        _ = c.clFinish(commands);
-
-        var after_time = time.nanoTimestamp();
-
-        err = c.clEnqueueReadBuffer(commands, nonce_results_mem, c.CL_TRUE, 0, @sizeOf(u64) * 64, &nonce_results, 0, null, null);
-        if (err != c.CL_SUCCESS) {
-            log.err("failed to read output array. {d}", .{err});
-            os.exit(1);
-        }
-
-        log.err("finished {d} hashes", .{global});
-        log.err("mining cycle end time: {d}, diff: {d}", .{ after_time, after_time - before_time });
-        break;
+    //global = local * config.gpu_work_size_max;
+    global = 1;
+    local = 1;
+    err = c.clEnqueueNDRangeKernel(commands, kernel, 1, null, &global, &local, 0, null, null);
+    if (err != c.CL_SUCCESS) {
+        log.err("failed to execute the kernel. {d}", .{err});
+        os.exit(1);
     }
+
+    _ = c.clFinish(commands);
+
+    var after_time = time.nanoTimestamp();
+    _ = range_start;
+    err = c.clEnqueueReadBuffer(commands, nonce_results_mem, c.CL_TRUE, 0, @sizeOf(u64) * 64, &nonce_results, 0, null, null);
+    if (err != c.CL_SUCCESS) {
+        log.err("failed to read output array. {d}", .{err});
+        os.exit(1);
+    }
+    err = c.clEnqueueReadBuffer(commands, result_index_mem, c.CL_TRUE, 0, @sizeOf(u32), &result_index, 0, null, null);
+    if (err != c.CL_SUCCESS) {
+        log.err("failed to read output index. {d}", .{err});
+        os.exit(1);
+    }
+
+    log.err("found {d} nonces", .{result_index});
+    var i: usize = 0;
+    if (result_index > 0) {
+        while (i <= result_index - 1) {
+            log.info("nonce: {d}", .{nonce_results[i]});
+            i += 1;
+        }
+    }
+
+    log.err("finished {d} hashes", .{global});
+    log.err("mining cycle end time: {d}, diff: {d}", .{ after_time, after_time - before_time });
+    //break;
+    //}
 
     _ = c.clReleaseMemObject(nonce_results_mem);
     _ = c.clReleaseMemObject(result_index_mem);
