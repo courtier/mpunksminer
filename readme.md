@@ -26,10 +26,8 @@ All options:
 
 ## Building
 
-- Clone the project then run `git submodule update --recursive --remote`
 - Download [Zig](https://ziglang.org/download/)
-- Run `zig build -Drelease-fast` in the project folder
-- Executable will be under zig-out/bin/
+- Run the commands in [commands.md](https://github.com/courtier/mpunksminer/blob/master/commands.md)
 
 ## TODO
 
