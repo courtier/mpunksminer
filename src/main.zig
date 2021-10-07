@@ -123,6 +123,7 @@ fn cpuThreads(tc: usize) !void {
     var i: usize = 0;
     var count: usize = tc;
     var threads: []Thread = try gpa.alloc(Thread, count);
+    defer gpa.free(threads);
     var start: u88 = random.int(u88);
     var before_time = time.nanoTimestamp();
     log.err("mining cycle start time: {d}", .{before_time});

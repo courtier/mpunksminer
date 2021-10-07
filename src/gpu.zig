@@ -275,6 +275,7 @@ pub fn multidevice(config: Config) !void {
     var mhs_mutex: Mutex = Mutex{};
     //try handleDevice(device_ids[0], config, &mhs_mutex);
     var threads: []Thread = try gpa.alloc(Thread, num_devices);
+    defer gpa.free(threads);
     var i: usize = 0;
 
     while (i < num_devices) {
