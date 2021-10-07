@@ -40,4 +40,3 @@ All options:
 - Integrate with the official miner controller
 - MAYBE: Record processed nonces in DB?
 - MAYBE: Add option to set the starting nonce?
-````
