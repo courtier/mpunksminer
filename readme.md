@@ -18,7 +18,7 @@ Bare minimum options:
 
 All options:
 
-````
+```
 	-h, --help            	Display help.
 	-g, --gpu             	Use GPU, default is CPU.
 	-m, --multi           	Use all OpenCL GPUs available.
