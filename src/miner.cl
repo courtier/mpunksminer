@@ -47,6 +47,7 @@ constant ulong RC[24] = {1ULL,
                          0x8000000000008080ULL,
                          0x80000001ULL,
                          0x8000000080008008ULL};
+
 #define rol(x, s) (((x) << s) | ((x) >> (64 - s)))
 #define REPEAT6(e) e e e e e e
 #define REPEAT24(e) REPEAT6(e e e e)
@@ -100,23 +101,25 @@ mkapply_sd(setout, dst[i] = src[i]); // setout
 #define P keccakf
 #define Plen 200
 
+constant uint RATE = 200 - (256 / 4);
+
 // Fold P*F over the full blocks of an input.
 #define foldP(I, L, F)                                                         \
-  while (L >= rate) {                                                          \
-    F(a, I, rate);                                                             \
+  while (L >= RATE) {                                                          \
+    F(a, I, RATE);                                                             \
     P(a);                                                                      \
-    I += rate;                                                                 \
-    L -= rate;                                                                 \
+    I += RATE;                                                                 \
+    L -= RATE;                                                                 \
   }
 
-inline void hash(uchar *out, size_t outlen, uchar const *in, size_t inlen,
-                 size_t rate, uchar delim) {
+inline void hash(uchar *out, size_t outlen, uchar const *in, size_t inlen) {
   uchar a[Plen] = {0};
   // Absorb input.
   foldP(in, inlen, xorin);
   // Xor in the DS and pad frame.
-  a[inlen] ^= delim;
-  a[rate - 1] ^= 0x80;
+  // always 0x01 for keccak256
+  a[inlen] ^= 0x01;
+  a[RATE - 1] ^= 0x80;
   // Xor in the last block.
   xorin(a, in, inlen);
   // Apply P
@@ -132,7 +135,7 @@ kernel void miner_init(global uchar *bytes_prefix, const ulong range_start,
                        const ulong difficulty_target,
                        global ulong *nonce_results, global uint *result_index) {
   ulong worker_id = (ulong)get_global_id(0);
-  if (range_start >= ULONG_MAX - worker_id)
+  if (range_start > ULONG_MAX - worker_id)
     return;
   ulong nonce = range_start + worker_id;
   // ulong nonce = 4416973503411977525;
@@ -158,7 +161,7 @@ kernel void miner_init(global uchar *bytes_prefix, const ulong range_start,
   // TODO
   // uchar test[4] = "test";
   uchar hash_bytes[32];
-  hash(hash_bytes, 32, local_bytes, 32, 200 - (256 / 4), 0x01);
+  hash(hash_bytes, 32, local_bytes, 32);
   /*uchar charset[16] = "0123456789abcdef";
   char buf[66];
   uint buf_i = 0;
@@ -205,6 +208,8 @@ kernel void miner_init(global uchar *bytes_prefix, const ulong range_start,
       return;
     }
     result += tmp;
+    if (result >= difficulty_target)
+      return;
     if (power > 0)
       power--;
     // } else
