@@ -10,6 +10,8 @@ difficulty_target: u88 = 5731203885580,
 range_increment: u88 = 10000000,
 bytes_prefix: [32]u8 = undefined,
 
+test_range_increment: u64 = 10000000,
+
 //test nonce: 11111115731203885580
 gpu_difficulty_target: u64 = 5731203885580,
 //TODO add option to both automatically determine this and override it manually

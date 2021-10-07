@@ -1,5 +1,6 @@
 const clap = @import("clap/clap.zig");
 const gpu = @import("gpu.zig");
+const cpu = @import("cpu.zig");
 const Config = @import("config.zig");
 const std = @import("std");
 const fmt = std.fmt;
@@ -188,6 +189,8 @@ pub fn main() !void {
     } else if (args.flag("--multi")) {
         try gpu.multidevice(config);
     } else if (args.flag("--test")) {
+        while(true)
+            try cpu.cpuThreads(4);
         //random
         config.address = @truncate(u72, @intCast(u160, 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4));
         config.bytes_prefix = calculateBytesPrefix();
