@@ -144,13 +144,15 @@ fn cpuThreads(tc: usize) !void {
 pub fn main() !void {
     const params = comptime [_]clap.Param(clap.Help){
         clap.parseParam("-h, --help                 Display help.") catch unreachable,
-        clap.parseParam("-g, --gpu                  Use gpu, default is cpu.") catch unreachable,
+        clap.parseParam("-g, --gpu                  Use GPU, default is CPU.") catch unreachable,
+        //todo add option to use a set amount of devices, or even pick which device(s)
+        clap.parseParam("-m, --multi                Use all OpenCL GPUs available.") catch unreachable,
         clap.parseParam("-t, --threads <NUM>        Amount of threads.") catch unreachable,
         clap.parseParam("-w, --wallet <STR>         ETH wallet address.") catch unreachable,
         clap.parseParam("-l, --lastmined <NUM>      Last mined punk.") catch unreachable,
         clap.parseParam("-d, --difficulty <NUM>     Difficulty target.") catch unreachable,
         clap.parseParam("-i, --increment <NUM>      # of hashes per cpu thread.") catch unreachable,
-        //add option to change gpu work amount
+        //todo add option to change gpu work amount
         clap.parseParam("--test                     Run in test mode.") catch unreachable,
     };
 
@@ -164,7 +166,7 @@ pub fn main() !void {
         return;
     }
 
-    log.err("THIS MINER DOES NOT CHECK FOR OG PUNK COLLISION, YOU MUST DO THIS BY HAND BEFORE MINTING OTHERWISE YOU MIGHT LOSE YOUR PUNK FOREVER!!!!!");
+    log.err("THIS MINER DOES NOT CHECK FOR OG PUNK COLLISION, YOU MUST DO THIS BY HAND BEFORE MINTING OTHERWISE YOU MIGHT LOSE YOUR PUNK FOREVER!!!!!", .{});
 
     if (args.option("--lastmined")) |l|
         config.last_mined = try fmt.parseInt(u96, l, 10);
@@ -181,7 +183,9 @@ pub fn main() !void {
         config.range_increment = try fmt.parseInt(u88, i, 10);
 
     if (args.flag("--gpu")) {
-        try gpu.gpu(config, 0);
+        try gpu.gpu(config);
+    } else if (args.flag("--multi")) {
+        try gpu.multidevice(config);
     } else if (args.flag("--test")) {
         //random
         config.address = @truncate(u72, @intCast(u160, 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4));

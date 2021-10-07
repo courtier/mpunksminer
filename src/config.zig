@@ -15,8 +15,9 @@ gpu_difficulty_target: u64 = 5731203885580,
 //TODO add option to both automatically determine this and override it manually
 gpu_work_size_max: usize = 100,
 
-last_mined_mutex: *Mutex = undefined,
-difficulty_target_mutex: *Mutex = undefined,
+//todo these will segfault once they are used, figure out a way to initialize them at runtime
+last_mined_mutex: Mutex = Mutex{},
+difficulty_target_mutex: Mutex = Mutex{},
 
 const Self = @This();
 
