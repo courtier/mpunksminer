@@ -164,6 +164,8 @@ pub fn main() !void {
         return;
     }
 
+    log.err("THIS MINER DOES NOT CHECK FOR OG PUNK COLLISION, YOU MUST DO THIS BY HAND BEFORE MINTING OTHERWISE YOU MIGHT LOSE YOUR PUNK FOREVER!!!!!");
+
     if (args.option("--lastmined")) |l|
         config.last_mined = try fmt.parseInt(u96, l, 10);
     if (args.option("--wallet")) |w| {
