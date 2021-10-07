@@ -1,8 +1,8 @@
 # mpunksminer
 ## Warning: there are no downloads available, you will have to compile this yourself.
-- supports only cpu right now, gpu will be supported soon
+- cpu and gpu support
 - ignore the "error: " prefix on console, those are not actually errors :p
-- 5 MH/s on a "2,3 GHz Dual-Core Intel Core i5" cpu
+- 5 MH/s on a "2,3 GHz Dual-Core Intel Core i5" cpu, 20 MH/s on a "Intel Iris Plus Graphics 640 1536 MB" gpu
 
 ## Running
 
@@ -31,8 +31,5 @@ All options:
 
 ## TODO
 
-- Add GPU support
 - Record processed nonces in DB
 - Add option to set the starting nonce
-- Use 64 bit integers in some places, might give some performance boost, difficulty target is <64 bits
-- 2^88 nonces possible
