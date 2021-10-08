@@ -18,10 +18,10 @@ const Atomic = atomic.Atomic;
 const ArrayList = std.ArrayList;
 const Keccak_256 = crypto.hash.sha3.Keccak_256;
 
-var config: Config = Config{};
-
 var gpa_allocator = std.heap.GeneralPurposeAllocator(.{}){};
 const gpa = &gpa_allocator.allocator;
+
+var config = Config{};
 
 const MAX_POWER_I = 16;
 const SIXTEEN_POWERS: [MAX_POWER_I]u64 = blk: {
@@ -33,6 +33,13 @@ const SIXTEEN_POWERS: [MAX_POWER_I]u64 = blk: {
     }
     break :blk buf;
 };
+
+const Hash64Union = packed union {
+    hash: [32]u8,
+    num: u256,
+};
+
+//this file is for testing purposes (for now at least).
 
 //take the sha3.zig and modify that too, surely i could speed it up
 //also make it return binary perhaps
@@ -109,29 +116,45 @@ fn pow(nt: u64, pt: u64) u88 {
 
 fn isNonceValid(nonce: u64) bool {
     var pack = encodeNonceOnly(nonce);
-    var h: [Keccak_256.digest_length]u8 = undefined;
-    Keccak_256.hash(pack[0..], &h, .{});
-    var n = bytesToInt(h[21..].*);
-    return n < config.gpu_difficulty_target;
+    var un: Hash64Union = undefined;
+    var num: u88 = 0;
+    //var h: [Keccak_256.digest_length]u8 = undefined;
+    Keccak_256.hash(pack[0..], &un.hash, .{});
+    //var n = bytesToInt(h[21..].*);
+    log.info("hash: {s}", .{fmt.fmtSliceHexLower(un.hash[0..])});
+    log.info("hash22: {s}", .{fmt.fmtSliceHexLower(un.hash[21..])});
+    //log.info("num: {s}", .{printBig(un.num)[0..]});
+    if (un.num == 25598079035355687173017345543407773300332939405046367093256301837718389435686) {
+        log.info("whole is good", .{});
+    }
+    num = @truncate(u88, un.num);
+    if (nonce == 0 and num == 117502329151596784903695654) {
+        log.info("lets go print broken", .{});
+    }
+    log.info("val: {d}", .{@truncate(u88, un.num)});
+    return num < config.gpu_difficulty_target;
 }
 
 fn miner(range_start: u64, range_end: u64) !void {
     log.err("miner thread id: {d} - amount: {d} - start: {d}", .{ Thread.getCurrentId(), range_end - range_start, range_start });
     var n = range_start;
-    while (n < range_end) {
-        if (isNonceValid(n))
-            log.err("found nonce: {d}. CHECK IF THIS PRODUCES A OG PUNK BEFORE MINTING!", .{n});
+    //while (n < range_end) {
+    while (n < range_start + 1) {
+        if (isNonceValid(n)) log.err("found nonce: {d}. CHECK IF THIS PRODUCES A OG PUNK BEFORE MINTING!", .{n});
         n += 1;
     }
 }
 
-pub fn cpuThreads(tc: usize) !void {
+pub fn cpuThreads(tc: usize, c: Config) !void {
     var i: usize = 0;
     var count: usize = tc;
     var threads: []Thread = try gpa.alloc(Thread, count);
     defer gpa.free(threads);
-    var start: u64 = random.int(u64);
+    //var start: u64 = random.int(u64);
+    var start: u64 = 0;
     var before_time = time.nanoTimestamp();
+    config = c;
+    config.bytes_prefix = calculateBytesPrefix();
     log.err("mining cycle start time: {d}", .{before_time});
     while (i < count) {
         var thread = try Thread.spawn(.{}, miner, .{ start, start + config.test_range_increment });

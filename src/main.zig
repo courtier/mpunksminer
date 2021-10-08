@@ -189,8 +189,9 @@ pub fn main() !void {
     } else if (args.flag("--multi")) {
         try gpu.multidevice(config);
     } else if (args.flag("--test")) {
-        while(true)
-            try cpu.cpuThreads(4);
+        //while(true)
+        //    try cpu.cpuThreads(4);
+        try cpu.cpuThreads(1, config);
         //random
         config.address = @truncate(u72, @intCast(u160, 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4));
         config.bytes_prefix = calculateBytesPrefix();
